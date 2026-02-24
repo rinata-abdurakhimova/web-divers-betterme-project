@@ -56,4 +56,41 @@ export class OrderRepository {
     const client = await pool.connect();
     return client;
   }
+
+  static async searchOrders(filters: {
+    page: number;
+    limit: number;
+    startDate?: string;
+    endDate?: string;
+    minTax?: number;
+    maxTax?: number;
+  }) {
+    const offset = (filters.page - 1) * filters.limit;
+    let query = `SELECT * FROM orders WHERE 1=1`;
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (filters.startDate) {
+      query += ` AND timestamp >= $${paramIndex++}`;
+      values.push(filters.startDate);
+    }
+    if (filters.endDate) {
+      query += ` AND timestamp <= $${paramIndex++}`;
+      values.push(filters.endDate);
+    }
+    if (filters.minTax !== undefined) {
+      query += ` AND tax_amount >= $${paramIndex++}`;
+      values.push(filters.minTax);
+    }
+    if (filters.maxTax !== undefined) {
+      query += ` AND tax_amount <= $${paramIndex++}`;
+      values.push(filters.maxTax);
+    }
+
+    query += ` ORDER BY timestamp DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+    values.push(filters.limit, offset);
+
+    const res = await pool.query(query, values);
+    return res.rows;
+  }
 }

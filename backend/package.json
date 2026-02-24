@@ -1,0 +1,38 @@
+{
+  "name": "web-divers-betterme-project",
+  "version": "1.0.0",
+  "description": "BetterMe project for web competition",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rinata-abdurakhimova/web-divers-betterme-project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/rinata-abdurakhimova/web-divers-betterme-project/issues"
+  },
+  "homepage": "https://github.com/rinata-abdurakhimova/web-divers-betterme-project#readme",
+  "dependencies": {
+    "csv-parser": "^3.2.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "multer": "^2.0.2",
+    "openai": "^6.25.0",
+    "pg": "^8.18.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^25.3.0",
+    "@types/pg": "^8.16.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

@@ -4,7 +4,7 @@ import { getCsvStream, CsvRow } from '../utils/csvParser';
 import { OrderRepository, OrderData } from '../repositories/order_repository';
 import { TaxService, CalculatedTax } from './tax_service';
 
-export class OrderService {
+ export class OrderService {
   static async createManualOrder(payload: { lat: number; lon: number; subtotal: number; timestamp: string }) {
     const taxCalculation = await TaxService.getTaxData(payload.lat, payload.lon, payload.subtotal);
 
@@ -60,11 +60,16 @@ export class OrderService {
 }
 
       if (currentBatch.length > 0) {
-        const finalResults = await Promise.allSettled(
-          currentBatch.map(item => this.processSingleRow(client, item))
-        );
-        handleBatchResults(finalResults);
-      }
+  for (const item of currentBatch) {
+    try {
+      await this.processSingleRow(client, item);
+      processedCount++;
+    } catch (rowError) {
+      console.error(`Error in final row:`, rowError);
+      errorCount++;
+    }
+  }
+}
 
       await client.query('COMMIT');
       return { processed: processedCount, errors: errorCount };

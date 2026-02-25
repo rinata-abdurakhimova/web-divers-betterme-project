@@ -83,7 +83,7 @@ export class OrderRepository {
     maxTax?: number;
   }) {
     const offset = (filters.page - 1) * filters.limit;
-    let query = `SELECT * FROM orders WHERE 1=1`;
+    let query = `SELECT *, COUNT(*) OVER() as total_count FROM orders WHERE 1=1`;
     const values: any[] = [];
     let paramIndex = 1;
 
@@ -108,6 +108,15 @@ export class OrderRepository {
     values.push(filters.limit, offset);
 
     const res = await pool.query(query, values);
-    return res.rows;
+
+    const total = res.rows.length > 0 ? parseInt(res.rows[0].total_count) : 0;
+
+    return {
+      data: res.rows.map(row => {
+        const { total_count, ...orderData } = row; 
+        return orderData;
+      }),
+      total
+    };
   }
 }

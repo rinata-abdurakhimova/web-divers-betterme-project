@@ -24,7 +24,7 @@ export class OrderService {
     
     let processedCount = 0;
     let errorCount = 0;
-    const BATCH_SIZE = 15; 
+    const BATCH_SIZE = 12; 
     let currentBatch: CsvRow[] = [];
 
     const handleBatchResults = (results: PromiseSettledResult<void>[]) => {

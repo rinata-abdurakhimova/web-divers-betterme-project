@@ -57,6 +57,23 @@ export class OrderRepository {
     return client;
   }
 
+  static async findExistingTaxByLocation(lat: number, lon: number): Promise<CalculatedTax | null> {
+  const query = `
+    SELECT composite_tax_rate, tax_amount, total_amount, breakdown, jurisdictions
+    FROM orders
+    WHERE latitude = $1 AND longitude = $2
+    LIMIT 1;
+  `;
+  
+  const res = await pool.query(query, [lat, lon]);
+  
+  if (res.rows.length > 0) {
+    return res.rows[0] as CalculatedTax;
+  }
+  
+  return null;
+}
+
   static async searchOrders(filters: {
     page: number;
     limit: number;
@@ -66,7 +83,7 @@ export class OrderRepository {
     maxTax?: number;
   }) {
     const offset = (filters.page - 1) * filters.limit;
-    let query = `SELECT * FROM orders WHERE 1=1`;
+    let query = `SELECT *, COUNT(*) OVER() as total_count FROM orders WHERE 1=1`;
     const values: any[] = [];
     let paramIndex = 1;
 
@@ -91,6 +108,11 @@ export class OrderRepository {
     values.push(filters.limit, offset);
 
     const res = await pool.query(query, values);
-    return res.rows;
+  const totalRecords = res.rows.length > 0 ? parseInt(res.rows[0].total_count) : 0;
+
+  return {
+    data: res.rows.map(({ total_count, ...order }) => order),
+    total_records: totalRecords
+  };
   }
 }

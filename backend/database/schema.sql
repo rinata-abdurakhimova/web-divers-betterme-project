@@ -25,3 +25,4 @@ ALTER SEQUENCE orders_id_seq RESTART WITH 100000;
 CREATE INDEX idx_orders_timestamp ON orders(timestamp);
 CREATE INDEX idx_orders_tax_amount ON orders(tax_amount);
 CREATE INDEX idx_orders_pagination ON orders(id);
+CREATE INDEX idx_orders_location ON orders (latitude, longitude);

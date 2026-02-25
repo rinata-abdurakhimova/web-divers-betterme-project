@@ -1,7 +1,8 @@
 import fs from 'fs';
+import path from 'path';
 import { getCsvStream, CsvRow } from '../utils/csvParser';
 import { OrderRepository, OrderData } from '../repositories/order_repository';
-import { TaxService } from './tax_service';
+import { TaxService, CalculatedTax } from './tax_service';
 
 export class OrderService {
   static async createManualOrder(payload: { lat: number; lon: number; subtotal: number; timestamp: string }) {
@@ -38,6 +39,8 @@ export class OrderService {
 
     try {
       await client.query('BEGIN');
+      console.log('Starting batch import with caching...');
+
       for await (const row of stream as any) {
         currentBatch.push(row as CsvRow);
 
@@ -65,7 +68,14 @@ export class OrderService {
       throw error;
     } finally {
       client.release();
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath); // Production practice: clean up temp files
+      
+      const isMainFile = filePath.includes('BetterMe Test-Input.csv');
+      if (fs.existsSync(filePath) && !isMainFile) {
+        fs.unlinkSync(filePath);
+        console.log(`Temporary upload file cleaned up: ${path.basename(filePath)}`);
+      } else {
+        console.log(`Main file preserved: ${path.basename(filePath)}`);
+      }
     }
   }
 
@@ -74,7 +84,22 @@ export class OrderService {
     const lon = parseFloat(csvRow.longitude);
     const subtotal = parseFloat(csvRow.subtotal);
 
-    const taxData = await TaxService.getTaxData(lat, lon, subtotal);
+    const existingTax = await OrderRepository.findExistingTaxByLocation(lat, lon);
+
+    let taxData: CalculatedTax;
+
+    if (!existingTax) {
+      taxData = await TaxService.getTaxData(lat, lon, subtotal);
+    } else {
+      const subtotalInCents = Math.round(subtotal * 100);
+      const taxAmountInCents = Math.round(subtotalInCents * existingTax.composite_tax_rate);
+      
+      taxData = {
+        ...existingTax,
+        tax_amount: taxAmountInCents / 100,
+        total_amount: (subtotalInCents + taxAmountInCents) / 100
+      };
+    }
 
     await OrderRepository.insertOrderWithClient(client, {
       id: parseInt(csvRow.id),

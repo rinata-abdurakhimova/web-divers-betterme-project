@@ -57,6 +57,23 @@ export class OrderRepository {
     return client;
   }
 
+  static async findExistingTaxByLocation(lat: number, lon: number): Promise<CalculatedTax | null> {
+  const query = `
+    SELECT composite_tax_rate, tax_amount, total_amount, breakdown, jurisdictions
+    FROM orders
+    WHERE latitude = $1 AND longitude = $2
+    LIMIT 1;
+  `;
+  
+  const res = await pool.query(query, [lat, lon]);
+  
+  if (res.rows.length > 0) {
+    return res.rows[0] as CalculatedTax;
+  }
+  
+  return null;
+}
+
   static async searchOrders(filters: {
     page: number;
     limit: number;

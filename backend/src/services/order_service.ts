@@ -45,14 +45,19 @@ export class OrderService {
         currentBatch.push(row as CsvRow);
 
         if (currentBatch.length === BATCH_SIZE) {
-          const results = await Promise.allSettled(
-            currentBatch.map(item => this.processSingleRow(client, item))
-          );
-          handleBatchResults(results);
-          currentBatch = []; 
-          if (processedCount % 100 === 0) console.log(`Processed ${processedCount} rows...`);
-        }
+          for (const item of currentBatch) {
+      try {
+        await this.processSingleRow(client, item);
+        processedCount++;
+      } catch (rowError) {
+        console.error(`Error in row:`, rowError);
+        errorCount++;
       }
+    }
+    currentBatch = []; 
+    if (processedCount % 100 === 0) console.log(`Processed ${processedCount} rows`);
+  }
+}
 
       if (currentBatch.length > 0) {
         const finalResults = await Promise.allSettled(

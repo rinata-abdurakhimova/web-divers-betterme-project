@@ -108,15 +108,11 @@ export class OrderRepository {
     values.push(filters.limit, offset);
 
     const res = await pool.query(query, values);
+  const totalRecords = res.rows.length > 0 ? parseInt(res.rows[0].total_count) : 0;
 
-    const total = res.rows.length > 0 ? parseInt(res.rows[0].total_count) : 0;
-
-    return {
-      data: res.rows.map(row => {
-        const { total_count, ...orderData } = row; 
-        return orderData;
-      }),
-      total
-    };
+  return {
+    data: res.rows.map(({ total_count, ...order }) => order),
+    total_records: totalRecords
+  };
   }
 }

@@ -79,7 +79,7 @@ import { TaxService, CalculatedTax } from './tax_service';
     } finally {
       client.release();
       
-      const isMainFile = filePath.includes('BetterMe Test-Input.csv');
+      const isMainFile = filePath.includes('test.csv');
       if (fs.existsSync(filePath) && !isMainFile) {
         fs.unlinkSync(filePath);
         console.log(`Temporary upload file cleaned up: ${path.basename(filePath)}`);

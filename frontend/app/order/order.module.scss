@@ -7,7 +7,7 @@
     font-size: 28px;
     font-weight: 700;
   }
-  &__kitCard {
+  &__item {
     margin-top: 24px;
     &-heading {
       font-size: 18px;
@@ -17,7 +17,7 @@
     &-label {
       display: block;
       padding: 14px;
-      border: 1px solid #ddd;
+      border: 2px solid var(--border-color);
       border-radius: 12px;
       margin-bottom: 12px;
       cursor: pointer;
@@ -31,45 +31,29 @@
         margin-right: 10px;
       }
     }
-  }
-  &__location {
-    margin-top: 16px;
-    display: flex;
-    gap: 12px;
-    align-items: center;
+    &-location {
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
 
-    &-button {
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: none;
-      background: black;
-      color: white;
-      cursor: pointer;
-      transition: 0.2s ease;
+      &_success {
+        color: var(--success);
+      }
 
-      &:disabled {
-        background: #aaa;
-        cursor: not-allowed;
+      &_error {
+        color: var(--error);
       }
     }
+    &-summary {
+      padding: 14px;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
 
-    &-success {
-      color: green;
-    }
-
-    &-error {
-      color: crimson;
-    }
-  }
-
-  &__summary {
-    padding: 14px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-
-    &-muted {
-      opacity: 0.8;
-      margin-top: 8px;
+      &_muted {
+        opacity: 0.8;
+        margin-top: 8px;
+      }
     }
   }
 }

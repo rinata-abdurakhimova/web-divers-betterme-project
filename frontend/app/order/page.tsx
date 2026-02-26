@@ -71,11 +71,11 @@ export default function OrderPage() {
         <main className={styles.block}>
             <h1 className={styles.block__title}>Order a kit</h1>
 
-            <div className={styles.block__kitCard}>
-                <h2 className={styles['block__kitCard-heading']}>1) Choose a kit</h2>
+            <div className={styles.block__item}>
+                <h2 className={styles['block__item-heading']}>1) Choose a kit</h2>
 
                 {KITS.map((k) => (
-                    <label key={k.id} className={styles['block__kitCard-label']}>
+                    <label key={k.id} className={styles['block__item-label']}>
                         <input
                             type="radio"
                             name="kit"
@@ -89,12 +89,11 @@ export default function OrderPage() {
                 ))}
             </div>
 
-            <div className={styles.block}>
-                <h2 className={styles.block__title}>2) Location</h2>
+            <div className={styles.block__item}>
+                <h2 className={styles['block__item-heading']}>2) Location</h2>
 
-                <div className={styles.block__location}>
+                <div className={styles['block__item-location']}>
                     <button
-                        className={styles['block__location-button']}
                         type="button"
                         onClick={getLocation}
                         disabled={locStatus === "loading"}
@@ -109,33 +108,32 @@ export default function OrderPage() {
                     )}
 
                     {locStatus === "denied" && (
-                        <span className={styles['block__location-error']}>
+                        <span className={styles['block__item-location_error']}>
                             Permission denied.
                         </span>
                     )}
 
                     {locStatus === "error" && (
-                        <span className={styles['block__location-error']}>
+                        <span className={styles['block__item-location_error']}>
                             Couldn’t get location.
                         </span>
                     )}
                 </div>
             </div>
 
-            <div className={styles.block}>
-                <h2 className={styles.block__title}>3) Summary</h2>
+            <div className={styles.block__item}>
+                <h2 className={styles['block__item-heading']}>3) Summary</h2>
 
-                <div className={styles.block__summary}>
+                <div className={styles['block__item-summary']}>
                     <div>Kit: <b>{kit.name}</b></div>
                     <div>Subtotal: <b>${kit.subtotal.toFixed(2)}</b></div>
-                    <div className={styles['block__summary-muted']}>
+                    <div className={styles['block__item-summary_muted']}>
                         Customer pays only the kit subtotal.
                     </div>
                 </div>
 
-                <div className={styles.block__location}>
+                <div className={styles['block__item-location']}>
                     <button
-                        className={styles['block__location-button']}
                         type="button"
                         onClick={placeOrder}
                         disabled={!canSubmit}
@@ -144,13 +142,13 @@ export default function OrderPage() {
                     </button>
 
                     {!coords && (
-                        <span className={styles['block__location-error']}>
+                        <span className={styles['block__item-location-error']}>
                           Get location first.
                         </span>
                     )}
 
                     {submitStatus === "success" && (
-                        <span className={styles['block__location-success']}>
+                        <span className={styles['block__item-location-success']}>
                             Logged to console
                         </span>
                     )}

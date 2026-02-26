@@ -14,5 +14,5 @@ app.use(express.json());
 app.use('/', orderRoutes);
 
 app.listen(PORT, () => {
-  console.log(`PostgreSQL connected. OpenAI Tax Resolution active.`);
+  console.log(`Offline Tax Resolution active.`);
 });

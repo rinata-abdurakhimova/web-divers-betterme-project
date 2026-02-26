@@ -24,95 +24,98 @@ export class OrderRepository {
     const values = [
       data.latitude, data.longitude, data.subtotal, data.timestamp,
       data.composite_tax_rate, data.tax_amount, data.total_amount,
-      data.breakdown, 
-      data.jurisdictions
+      JSON.stringify(data.breakdown), 
+      JSON.stringify(data.jurisdictions)
     ];
 
     const res = await pool.query(query, values);
     return res.rows[0];
   }
 
-  static async insertOrderWithClient(client: PoolClient, data: OrderData) {
+  static async getTransactionClient(): Promise<PoolClient> {
+    return await pool.connect(); 
+  }
+
+  static async bulkInsertOrders(client: PoolClient, orders: OrderData[]) {
+    if (orders.length === 0) return;
+
+    const values: any[] = [];
+    const placeholders: string[] = [];
+    let paramIndex = 1;
+
+    for (const order of orders) {
+      placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
+      values.push(
+        order.id, order.latitude, order.longitude, order.subtotal, order.timestamp,
+        order.composite_tax_rate, order.tax_amount, order.total_amount,
+        JSON.stringify(order.breakdown), JSON.stringify(order.jurisdictions)
+      );
+    }
+
     const query = `
       INSERT INTO orders (
         id, latitude, longitude, subtotal, timestamp,
-        composite_tax_rate, tax_amount, total_amount, 
-        breakdown, jurisdictions
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        composite_tax_rate, tax_amount, total_amount, breakdown, jurisdictions
+      ) VALUES ${placeholders.join(', ')}
       ON CONFLICT (id) DO NOTHING;
     `;
-
-    const values = [
-      data.id, data.latitude, data.longitude, data.subtotal, data.timestamp,
-      data.composite_tax_rate, data.tax_amount, data.total_amount,
-      data.breakdown,
-      data.jurisdictions
-    ];
 
     await client.query(query, values);
   }
 
-  static async getTransactionClient(): Promise<PoolClient> {
-    const client = await pool.connect();
-    return client;
-  }
+  static async searchOrders(filters: any) {
+    const page = filters.page || 1;
+    const limit = filters.limit || 50;
+    const offset = (page - 1) * limit;
 
-  static async findExistingTaxByLocation(lat: number, lon: number): Promise<CalculatedTax | null> {
-  const query = `
-    SELECT composite_tax_rate, tax_amount, total_amount, breakdown, jurisdictions
-    FROM orders
-    WHERE latitude = $1 AND longitude = $2
-    LIMIT 1;
-  `;
-  
-  const res = await pool.query(query, [lat, lon]);
-  
-  if (res.rows.length > 0) {
-    return res.rows[0] as CalculatedTax;
-  }
-  
-  return null;
-}
-
-  static async searchOrders(filters: {
-    page: number;
-    limit: number;
-    startDate?: string;
-    endDate?: string;
-    minTax?: number;
-    maxTax?: number;
-  }) {
-    const offset = (filters.page - 1) * filters.limit;
-    let query = `SELECT *, COUNT(*) OVER() as total_count FROM orders WHERE 1=1`;
+    let dataQuery = `SELECT * FROM orders WHERE 1=1`;
+    let countQuery = `SELECT COUNT(*) FROM orders WHERE 1=1`;
     const values: any[] = [];
     let paramIndex = 1;
 
     if (filters.startDate) {
-      query += ` AND timestamp >= $${paramIndex++}`;
+      dataQuery += ` AND timestamp >= $${paramIndex}`;
+      countQuery += ` AND timestamp >= $${paramIndex}`;
       values.push(filters.startDate);
+      paramIndex++;
     }
     if (filters.endDate) {
-      query += ` AND timestamp <= $${paramIndex++}`;
+      dataQuery += ` AND timestamp <= $${paramIndex}`;
+      countQuery += ` AND timestamp <= $${paramIndex}`;
       values.push(filters.endDate);
+      paramIndex++;
     }
     if (filters.minTax !== undefined) {
-      query += ` AND tax_amount >= $${paramIndex++}`;
+      dataQuery += ` AND tax_amount >= $${paramIndex}`;
+      countQuery += ` AND tax_amount >= $${paramIndex}`;
       values.push(filters.minTax);
+      paramIndex++;
     }
     if (filters.maxTax !== undefined) {
-      query += ` AND tax_amount <= $${paramIndex++}`;
+      dataQuery += ` AND tax_amount <= $${paramIndex}`;
+      countQuery += ` AND tax_amount <= $${paramIndex}`;
       values.push(filters.maxTax);
+      paramIndex++;
     }
 
-    query += ` ORDER BY timestamp DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
-    values.push(filters.limit, offset);
+    dataQuery += ` ORDER BY timestamp DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+    const dataValues = [...values, limit, offset];
 
-    const res = await pool.query(query, values);
-  const totalRecords = res.rows.length > 0 ? parseInt(res.rows[0].total_count) : 0;
+    const [dataResult, countResult] = await Promise.all([
+      pool.query(dataQuery, dataValues),
+      pool.query(countQuery, values)
+    ]);
 
-  return {
-    data: res.rows.map(({ total_count, ...order }) => order),
-    total_records: totalRecords
-  };
+    const totalRecords = parseInt(countResult.rows[0].count, 10);
+
+    return {
+      data: dataResult.rows,
+      meta: {
+        page: page,
+        limit: limit,
+        total_records: totalRecords,
+        total_pages: Math.ceil(totalRecords / limit)
+      }
+    };
   }
 }

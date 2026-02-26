@@ -1,0 +1,20 @@
+.block {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  text-align: center;
+  padding: 40px;
+
+  &__title {
+    font-size: 32px;
+    font-weight: 700;
+  }
+
+  &__text {
+    font-size: 18px;
+    color: var(--text-secondary);
+  }
+}

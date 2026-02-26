@@ -1,0 +1,83 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+
+:root {
+  --bg-primary: #0f1115;
+  --bg-secondary: #181b22;
+
+
+  --text-primary: #ffffff;
+  --text-secondary: #a9b0bd;
+  --text-muted: #6b7280;
+
+  --accent: #4f8cff;
+  --accent-hover: #3c73d9;
+
+  --border-color: #2a2f3a;
+
+  --result-success: #32db32;
+  --result-error: #d32020;
+
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+
+  font-family: "Segoe UI", sans-serif;
+
+  line-height: 1.6;
+}
+
+main {
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+button, a {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: 0.2s ease;
+  text-decoration: none;
+
+  &:disabled {
+    background: var(--text-muted);
+    cursor: not-allowed;
+  }
+}
+
+button:hover, a:hover {
+  background-color: var(--accent-hover);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

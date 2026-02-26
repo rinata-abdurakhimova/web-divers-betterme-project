@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import { getCsvStream, CsvRow } from '../utils/csvParser';
+import { getCsvStream } from '../utils/csvParser';
 import { OrderRepository, OrderData } from '../repositories/order_repository';
-import { TaxService, CalculatedTax } from './tax_service';
+import { TaxService } from './tax_service';
 
- export class OrderService {
+export class OrderService {
   static async createManualOrder(payload: { lat: number; lon: number; subtotal: number; timestamp: string }) {
-    const taxCalculation = await TaxService.getTaxData(payload.lat, payload.lon, payload.subtotal);
-
+    const taxCalculation = TaxService.getTaxData(payload.lat, payload.lon, payload.subtotal);
+    
     const order = await OrderRepository.insertOrder({
       latitude: payload.lat,
       longitude: payload.lon,
@@ -15,110 +15,73 @@ import { TaxService, CalculatedTax } from './tax_service';
       timestamp: new Date(payload.timestamp),
       ...taxCalculation,
     });
-
+    
     return order;
   }
-  static async importOrdersFromCsv(filePath: string): Promise<{ processed: number; errors: number }> {
+
+  static async importOrdersFromCsv(filePath: string): Promise<{ processed: number; errors: number; executionTime: string }> {
+    const startTime = Date.now(); 
+
     const client = await OrderRepository.getTransactionClient();
     const stream = getCsvStream(filePath);
     
     let processedCount = 0;
-    let errorCount = 0;
-    const BATCH_SIZE = 12; 
-    let currentBatch: CsvRow[] = [];
-
-    const handleBatchResults = (results: PromiseSettledResult<void>[]) => {
-      results.forEach((res) => {
-        if (res.status === 'fulfilled') processedCount++;
-        else {
-          console.error(`Error in row:`, res.reason);
-          errorCount++;
-        }
-      });
-    };
+    let currentBatch: OrderData[] = [];
+    const BATCH_SIZE = 1000; 
 
     try {
       await client.query('BEGIN');
-      console.log('Starting batch import with caching...');
+      console.log('Starting BLAZING FAST offline bulk import...');
 
       for await (const row of stream as any) {
-        currentBatch.push(row as CsvRow);
+        const lat = parseFloat(row.latitude);
+        const lon = parseFloat(row.longitude);
+        const subtotal = parseFloat(row.subtotal);
+
+        const taxData = TaxService.getTaxData(lat, lon, subtotal);
+
+        currentBatch.push({
+          id: parseInt(row.id),
+          latitude: lat,
+          longitude: lon,
+          subtotal: subtotal,
+          timestamp: new Date(row.timestamp),
+          ...taxData
+        });
 
         if (currentBatch.length === BATCH_SIZE) {
-          for (const item of currentBatch) {
-      try {
-        await this.processSingleRow(client, item);
-        processedCount++;
-      } catch (rowError) {
-        console.error(`Error in row:`, rowError);
-        errorCount++;
+          await OrderRepository.bulkInsertOrders(client, currentBatch);
+          processedCount += currentBatch.length;
+          console.log(`Bulk inserted ${processedCount} rows...`);
+          currentBatch = []; 
+        }
       }
-    }
-    currentBatch = []; 
-    if (processedCount % 100 === 0) console.log(`Processed ${processedCount} rows`);
-  }
-}
 
       if (currentBatch.length > 0) {
-  for (const item of currentBatch) {
-    try {
-      await this.processSingleRow(client, item);
-      processedCount++;
-    } catch (rowError) {
-      console.error(`Error in final row:`, rowError);
-      errorCount++;
-    }
-  }
-}
+        await OrderRepository.bulkInsertOrders(client, currentBatch);
+        processedCount += currentBatch.length;
+      }
 
       await client.query('COMMIT');
-      return { processed: processedCount, errors: errorCount };
+      
+      const endTime = Date.now();
+      const durationSeconds = ((endTime - startTime) / 1000).toFixed(2);
+
+      console.log(`FINISHED! Processed all ${processedCount} rows in ${durationSeconds} seconds!`);
+      
+      return { processed: processedCount, errors: 0, executionTime: `${durationSeconds}s` };
+
     } catch (error) {
       await client.query('ROLLBACK');
+      console.error('Import error:', error);
       throw error;
     } finally {
       client.release();
-      
-      const isMainFile = filePath.includes('test.csv');
+      const isMainFile = filePath.includes('BetterMe Test-Input.csv');
       if (fs.existsSync(filePath) && !isMainFile) {
         fs.unlinkSync(filePath);
-        console.log(`Temporary upload file cleaned up: ${path.basename(filePath)}`);
-      } else {
-        console.log(`Main file preserved: ${path.basename(filePath)}`);
       }
     }
-  }
-
-  private static async processSingleRow(client: any, csvRow: CsvRow) {
-    const lat = parseFloat(csvRow.latitude);
-    const lon = parseFloat(csvRow.longitude);
-    const subtotal = parseFloat(csvRow.subtotal);
-
-    const existingTax = await OrderRepository.findExistingTaxByLocation(lat, lon);
-
-    let taxData: CalculatedTax;
-
-    if (!existingTax) {
-      taxData = await TaxService.getTaxData(lat, lon, subtotal);
-    } else {
-      const subtotalInCents = Math.round(subtotal * 100);
-      const taxAmountInCents = Math.round(subtotalInCents * existingTax.composite_tax_rate);
-      
-      taxData = {
-        ...existingTax,
-        tax_amount: taxAmountInCents / 100,
-        total_amount: (subtotalInCents + taxAmountInCents) / 100
-      };
-    }
-
-    await OrderRepository.insertOrderWithClient(client, {
-      id: parseInt(csvRow.id),
-      latitude: lat,
-      longitude: lon,
-      subtotal: subtotal,
-      timestamp: new Date(csvRow.timestamp),
-      ...taxData
-    });
   }
 
   static async getOrders(filters: any) {

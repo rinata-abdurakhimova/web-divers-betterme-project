@@ -52,16 +52,15 @@ export class OrderController {
         maxTax: req.query.maxTax ? parseFloat(req.query.maxTax as string) : undefined,
       };
 
-      const { data, total_records } = await OrderService.getOrders(filters);
-      const total_pages = Math.ceil(total_records / limit);
+      const { data, meta } = await OrderService.getOrders(filters);
 
       res.status(200).json({
         data,
         meta: {
-          total_records,
-          current_page: page,
-          limit,
-          total_pages
+          current_page: meta.page,
+          limit: meta.limit,
+          total_records: meta.total_records,
+          total_pages: meta.total_pages
         }
       });
     } catch (error: any) {

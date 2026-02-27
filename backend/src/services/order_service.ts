@@ -27,7 +27,7 @@ export class OrderService {
     
     let processedCount = 0;
     let currentBatch: OrderData[] = [];
-    const BATCH_SIZE = 1000; 
+    const BATCH_SIZE = 50000; 
 
     try {
       await client.query('BEGIN');

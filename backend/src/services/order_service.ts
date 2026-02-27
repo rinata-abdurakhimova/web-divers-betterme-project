@@ -26,6 +26,7 @@ export class OrderService {
     const stream = getCsvStream(filePath);
     
     let processedCount = 0;
+    let skippedCount = 0;
     let currentBatch: OrderData[] = [];
     const BATCH_SIZE = 50000; 
 
@@ -38,7 +39,22 @@ export class OrderService {
         const lon = parseFloat(row.longitude);
         const subtotal = parseFloat(row.subtotal);
 
-        const taxData = TaxService.getTaxData(lat, lon, subtotal);
+        let taxData;
+        try {
+          taxData = TaxService.getTaxData(lat, lon, subtotal);
+        } catch (error) {
+          skippedCount++;
+
+          if (error instanceof Error) {
+            console.warn(
+                `Skipping row ${row.id ?? "unknown"}: ${error.message}`
+            );
+          } else {
+            console.warn(`Skipping row ${row.id ?? "unknown"}: Unknown error`);
+          }
+
+          continue;
+        }
 
         currentBatch.push({
           id: parseInt(row.id),

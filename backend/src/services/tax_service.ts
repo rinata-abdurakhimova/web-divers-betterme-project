@@ -13,6 +13,14 @@ export interface CalculatedTax {
 
 export class TaxService {
   static getTaxData(lat: number, lon: number, subtotal: number): CalculatedTax {
+    const isInNY =
+        lat >= 40.4 &&
+        lat <= 45.1 &&
+        lon >= -79.8 &&
+        lon <= -71.8;
+    if (!isInNY) {
+      throw new Error("Location must be in New York State");
+    }
     const stateRate = 0.04; 
     let countyRate = 0.04;  
     let cityRate = 0.0;

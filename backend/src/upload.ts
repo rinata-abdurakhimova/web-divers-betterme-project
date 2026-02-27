@@ -15,7 +15,7 @@ async function uploadFile() {
   console.log('Sending file to your backend...');
 
   try {
-    const response = await fetch('http://localhost:3000/orders/import', {
+    const response = await fetch('http://localhost:5000/orders/import', {
       method: 'POST',
       body: formData,
     });

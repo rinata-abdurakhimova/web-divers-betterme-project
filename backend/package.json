@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "BetterMe project for web competition",
   "main": "src/index.ts",
-  "type": "module",
   "scripts": {
-    "start": "tsx src/index.ts",
-    "dev": "tsx watch src/index.ts"
+    "dev": "ts-node-dev src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "repository": {
     "type": "git",

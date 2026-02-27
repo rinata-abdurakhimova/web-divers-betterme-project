@@ -15,7 +15,7 @@ export class OrderController {
       const validatedData = CreateOrderSchema.parse(req.body);
       const order = await OrderService.createManualOrder(validatedData);
       res.status(201).json(order);
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof z.ZodError) {
         const formattedErrors = error.issues.reduce((acc: any, err) => {
           acc[err.path[0]] = err.message;
@@ -23,7 +23,12 @@ export class OrderController {
         }, {});
         return res.status(400).json({ errors: formattedErrors });
       }
-      res.status(400).json({ error: error.message });
+
+      if (error instanceof Error) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Unknown error occurred" });
     }
   }
 

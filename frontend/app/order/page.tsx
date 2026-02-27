@@ -2,12 +2,26 @@
 
 import { useState } from "react";
 import styles from "./order.module.scss";
+import { createOrder } from "@/services/api";
 
 type Kit = {
     id: string;
     name: string;
     description: string;
     subtotal: number;
+};
+
+type OrderResponse = {
+    subtotal: number;
+    composite_tax_rate: number;
+    tax_amount: number;
+    total_amount: number;
+    breakdown: {
+        state_rate: number;
+        county_rate: number;
+        city_rate: number;
+        special_rates: number;
+    };
 };
 
 const KITS: Kit[] = [
@@ -20,7 +34,9 @@ export default function OrderPage() {
     const [kitId, setKitId] = useState<string>(KITS[0].id);
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
     const [locStatus, setLocStatus] = useState<"idle" | "loading" | "ready" | "denied" | "error">("idle");
-    const [submitStatus, setSubmitStatus] = useState<"idle" | "submitting" | "success">("idle");
+    const [submitStatus, setSubmitStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+    const [orderResult, setOrderResult] = useState<OrderResponse | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const kit = KITS.find((k) => k.id === kitId)!;
 
@@ -47,24 +63,34 @@ export default function OrderPage() {
         );
     };
 
-    const canSubmit = Boolean(coords) && submitStatus !== "submitting";
+    const handleSubmit = async () => {
+        if (!coords) {
+            setErrorMessage("Get location first.");
+            return;
+        }
 
-    const placeOrder = () => {
-        if (!coords) return;
+        try {
+            setSubmitStatus("submitting");
+            setErrorMessage(null);
 
-        setSubmitStatus("submitting");
+            const result = await createOrder({
+                lat: coords.latitude,
+                lon: coords.longitude,
+                subtotal: kit.subtotal,
+            });
 
-        const payload = {
-            kitId: kit.id,
-            subtotal: kit.subtotal,
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-            timestamp: new Date().toISOString(),
-        };
+            setOrderResult(result);
+            setSubmitStatus("success");
 
-        console.log("ORDER PAYLOAD:", payload);
+        } catch (error) {
+            setSubmitStatus("error");
 
-        setSubmitStatus("success");
+            if (error instanceof Error) {
+                setErrorMessage(error.message);
+            } else {
+                setErrorMessage("Unknown error occurred");
+            }
+        }
     };
 
     return (
@@ -135,25 +161,41 @@ export default function OrderPage() {
                 <div className={styles['block__item-location']}>
                     <button
                         type="button"
-                        onClick={placeOrder}
-                        disabled={!canSubmit}
+                        onClick={handleSubmit}
+                        disabled={submitStatus === "submitting"}
                     >
                         {submitStatus === "submitting" ? "Placing..." : "Place order"}
                     </button>
 
-                    {!coords && (
-                        <span className={styles['block__item-location-error']}>
-                          Get location first.
-                        </span>
+                    {errorMessage && (
+                        <span className={styles["block__item-location-error"]}>
+                        {errorMessage}
+                      </span>
                     )}
 
                     {submitStatus === "success" && (
-                        <span className={styles['block__item-location-success']}>
-                            Logged to console
+                        <span className={styles["block__item-location-success"]}>
+                            Order created successfully.
                         </span>
                     )}
                 </div>
             </div>
+            {orderResult && (
+                <div className={styles.block__result}>
+                    <h2>Order Summary</h2>
+
+                    <p>Subtotal: ${orderResult.subtotal.toFixed(2)}</p>
+                    <p>Tax rate: {(orderResult.composite_tax_rate * 100).toFixed(3)}%</p>
+                    <p>Tax amount: ${orderResult.tax_amount.toFixed(2)}</p>
+                    <p><strong>Total: ${orderResult.total_amount.toFixed(2)}</strong></p>
+
+                    <h3>Breakdown</h3>
+                    <p>State: {(orderResult.breakdown.state_rate * 100).toFixed(3)}%</p>
+                    <p>County: {(orderResult.breakdown.county_rate * 100).toFixed(3)}%</p>
+                    <p>City: {(orderResult.breakdown.city_rate * 100).toFixed(3)}%</p>
+                    <p>Special: {(orderResult.breakdown.special_rates * 100).toFixed(3)}%</p>
+                </div>
+            )}
         </main>
     );
 }

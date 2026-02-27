@@ -1,15 +1,16 @@
-import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import pg from "pg";
+
+const { Pool, types } = pg;
+
+types.setTypeParser(1700, (value) => parseFloat(value));
 
 dotenv.config();
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' 
-        ? { rejectUnauthorized: false } 
-        : false,
-    
-    max: 50, 
+    ssl: false,
+    max: 50,
     idleTimeoutMillis: 1000,
     connectionTimeoutMillis: 5000,
 });

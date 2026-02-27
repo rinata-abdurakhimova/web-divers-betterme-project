@@ -39,28 +39,46 @@ export class OrderRepository {
   static async bulkInsertOrders(client: PoolClient, orders: OrderData[]) {
     if (orders.length === 0) return;
 
-    const values: any[] = [];
-    const placeholders: string[] = [];
-    let paramIndex = 1;
+    const ids: number[] = [];
+    const lats: number[] = [];
+    const lons: number[] = [];
+    const subtotals: number[] = [];
+    const timestamps: Date[] = [];
+    const rates: number[] = [];
+    const taxAmounts: number[] = [];
+    const totalAmounts: number[] = [];
+    const breakdowns: string[] = [];
+    const jurisdictions: string[] = [];
 
     for (const order of orders) {
-      placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
-      values.push(
-        order.id, order.latitude, order.longitude, order.subtotal, order.timestamp,
-        order.composite_tax_rate, order.tax_amount, order.total_amount,
-        JSON.stringify(order.breakdown), JSON.stringify(order.jurisdictions)
-      );
+      ids.push(order.id!);
+      lats.push(order.latitude);
+      lons.push(order.longitude);
+      subtotals.push(order.subtotal);
+      timestamps.push(order.timestamp);
+      rates.push(order.composite_tax_rate);
+      taxAmounts.push(order.tax_amount);
+      totalAmounts.push(order.total_amount);
+      breakdowns.push(JSON.stringify(order.breakdown));
+      jurisdictions.push(JSON.stringify(order.jurisdictions));
     }
 
     const query = `
       INSERT INTO orders (
         id, latitude, longitude, subtotal, timestamp,
         composite_tax_rate, tax_amount, total_amount, breakdown, jurisdictions
-      ) VALUES ${placeholders.join(', ')}
+      )
+      SELECT * FROM UNNEST(
+        $1::int[], $2::numeric[], $3::numeric[], $4::numeric[], $5::timestamp[],
+        $6::numeric[], $7::numeric[], $8::numeric[], $9::jsonb[], $10::jsonb[]
+      )
       ON CONFLICT (id) DO NOTHING;
     `;
 
-    await client.query(query, values);
+    await client.query(query, [
+      ids, lats, lons, subtotals, timestamps,
+      rates, taxAmounts, totalAmounts, breakdowns, jurisdictions
+    ]);
   }
 
   static async searchOrders(filters: any) {

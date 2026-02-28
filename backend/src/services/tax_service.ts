@@ -244,6 +244,14 @@ export class TaxService {
       breakdown = { state_rate: 0.0600, county_rate: 0.0000, city_rate: 0.0000, special_rates: 0.0000 };
       jurisdictions = ['Washington D.C.'];
     }
+    else if (this.isWithin(latitude, longitude, { minLat: 51.00, maxLat: 72.00, minLon: -179.99, maxLon: -129.00 })) {
+      breakdown = { state_rate: 0.0000, county_rate: 0.0176, city_rate: 0.0000, special_rates: 0.0000 };
+      jurisdictions = ['Alaska State', 'Local Borough'];
+    }
+    else if (this.isWithin(latitude, longitude, { minLat: 18.00, maxLat: 23.00, minLon: -161.00, maxLon: -154.00 })) {
+      breakdown = { state_rate: 0.0400, county_rate: 0.0050, city_rate: 0.0000, special_rates: 0.0000 };
+      jurisdictions = ['Hawaii State', 'County Surcharge'];
+    }
 
     const compositeRate = breakdown.state_rate + breakdown.county_rate + breakdown.city_rate + breakdown.special_rates;
     

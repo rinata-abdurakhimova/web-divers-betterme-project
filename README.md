@@ -1,7 +1,6 @@
 # web-divers-betterme-project
-BetterMe project for web competition
-
 ## BetterMe: Intelligent Tax Compliance System for Drone Delivery
+BetterMe project for web competition
 
 ## Strategic Overview & Business Context
 The BetterMe story began with a bold vision: a group of friends leaving university to launch a game-changing wellness service. After securing a drone delivery license for New York State, we introduced "Instant Wellness Kits"—compact resets delivered in 20-30 minutes. Rapid viral success, however, led to a critical oversight: we completely ignored taxation. The Tax Service issued a 48-hour ultimatum: implement a compliant sales tax system or face shutdown. Our solution doesn't just fix this "leak"—it transforms a legal threat into a technological advantage, allowing the company to scale instantly.

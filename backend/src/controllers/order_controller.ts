@@ -4,14 +4,14 @@ import { OrderService } from '../services/order_service';
 export class OrderController {
   static async createOrder(req: Request, res: Response): Promise<void> {
     try {
-      const { latitude, longitude, subtotal } = req.body;
+      const { lat, lon, subtotal } = req.body;
 
-      if (latitude === undefined || longitude === undefined || subtotal === undefined) {
-        res.status(400).json({ error: 'Missing required fields: latitude, longitude, subtotal' });
+      if (lat === undefined || lon === undefined || subtotal === undefined) {
+        res.status(400).json({ error: 'Missing required fields: lat, lon, subtotal' });
         return;
       }
 
-      const order = await OrderService.createOrder(Number(latitude), Number(longitude), Number(subtotal));
+      const order = await OrderService.createOrder(Number(lat), Number(lon), Number(subtotal));
       res.status(201).json(order);
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });
@@ -38,7 +38,8 @@ export class OrderController {
 
   static async getOrders(req: Request, res: Response): Promise<void> {
     try {
-      const filters = req.query;
+      const filters = { ...req.query, startDate: req.query.from, endDate: req.query.to };
+      
       const result = await OrderService.getOrders(filters);
       res.status(200).json(result);
     } catch (error) {

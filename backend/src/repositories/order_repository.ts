@@ -41,7 +41,7 @@ export class OrderRepository {
 
     const res = await pool.query(query, values);
     return res.rows[0];
-  } // <--- ОСЬ ЦЮ ДУЖКУ ТРЕБА БУЛО ДОДАТИ ТУТ
+  }
 
   static async bulkInsertOrders(orders: OrderData[]) {
     if (orders.length === 0) return;
@@ -71,7 +71,7 @@ export class OrderRepository {
     const values = [lats, lons, subtotals, rates, taxAmounts, totalAmounts, breakdowns, jurisdictions, timestamps];
     const res = await pool.query(query, values);
     return res.rows;
-  } // <--- А ЦЮ ДУЖКУ ПРИБРАТИ ЗНИЗУ (бо вона закривала insertOrder)
+  }
 
   static async searchOrders(filters: any) {
     const page = filters.page ? parseInt(filters.page, 10) : 1;

@@ -1,13 +1,19 @@
 import pool from '../config/db';
-import { CalculatedTax } from '../services/tax_service';
-import { PoolClient } from 'pg';
 
-export interface OrderData extends CalculatedTax {
-  id?: number;
+export interface OrderData {
+  id?: number | string;
   latitude: number;
   longitude: number;
   subtotal: number;
-  timestamp: Date;
+  timestamp?: Date;
+  
+  composite_tax_rate: number;
+  tax_amount: number;
+  total_amount: number;
+  breakdown: any;
+  jurisdictions: string[];
+  
+  created_at?: Date | string;
 }
 
 export class OrderRepository {
@@ -22,8 +28,13 @@ export class OrderRepository {
     `;
 
     const values = [
-      data.latitude, data.longitude, data.subtotal, data.timestamp,
-      data.composite_tax_rate, data.tax_amount, data.total_amount,
+      data.latitude, 
+      data.longitude, 
+      data.subtotal, 
+      data.timestamp || new Date(), 
+      data.composite_tax_rate, 
+      data.tax_amount, 
+      data.total_amount,
       JSON.stringify(data.breakdown), 
       JSON.stringify(data.jurisdictions)
     ];
@@ -32,58 +43,9 @@ export class OrderRepository {
     return res.rows[0];
   }
 
-  static async getTransactionClient(): Promise<PoolClient> {
-    return await pool.connect(); 
-  }
-
-  static async bulkInsertOrders(client: PoolClient, orders: OrderData[]) {
-    if (orders.length === 0) return;
-
-    const ids: number[] = [];
-    const lats: number[] = [];
-    const lons: number[] = [];
-    const subtotals: number[] = [];
-    const timestamps: Date[] = [];
-    const rates: number[] = [];
-    const taxAmounts: number[] = [];
-    const totalAmounts: number[] = [];
-    const breakdowns: string[] = [];
-    const jurisdictions: string[] = [];
-
-    for (const order of orders) {
-      ids.push(order.id!);
-      lats.push(order.latitude);
-      lons.push(order.longitude);
-      subtotals.push(order.subtotal);
-      timestamps.push(order.timestamp);
-      rates.push(order.composite_tax_rate);
-      taxAmounts.push(order.tax_amount);
-      totalAmounts.push(order.total_amount);
-      breakdowns.push(JSON.stringify(order.breakdown));
-      jurisdictions.push(JSON.stringify(order.jurisdictions));
-    }
-
-    const query = `
-      INSERT INTO orders (
-        id, latitude, longitude, subtotal, timestamp,
-        composite_tax_rate, tax_amount, total_amount, breakdown, jurisdictions
-      )
-      SELECT * FROM UNNEST(
-        $1::int[], $2::numeric[], $3::numeric[], $4::numeric[], $5::timestamp[],
-        $6::numeric[], $7::numeric[], $8::numeric[], $9::jsonb[], $10::jsonb[]
-      )
-      ON CONFLICT (id) DO NOTHING;
-    `;
-
-    await client.query(query, [
-      ids, lats, lons, subtotals, timestamps,
-      rates, taxAmounts, totalAmounts, breakdowns, jurisdictions
-    ]);
-  }
-
   static async searchOrders(filters: any) {
-    const page = filters.page || 1;
-    const limit = filters.limit || 50;
+    const page = filters.page ? parseInt(filters.page, 10) : 1;
+    const limit = filters.limit ? parseInt(filters.limit, 10) : 50;
     const offset = (page - 1) * limit;
 
     let dataQuery = `SELECT * FROM orders WHERE 1=1`;

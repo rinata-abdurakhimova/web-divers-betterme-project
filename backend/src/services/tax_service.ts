@@ -12,47 +12,38 @@ export interface CalculatedTax {
 }
 
 export class TaxService {
-  static getTaxData(lat: number, lon: number, subtotal: number): CalculatedTax {
-    const isInNY =
-        lat >= 40.4 &&
-        lat <= 45.1 &&
-        lon >= -79.8 &&
-        lon <= -71.8;
-    if (!isInNY) {
-      throw new Error("Location must be in New York State");
-    }
-    const stateRate = 0.04; 
-    let countyRate = 0.04;  
-    let cityRate = 0.0;
-    let specialRates = 0.0;
-    const jurisdictions = ["New York State"];
+  public static getTaxData(latitude: number, longitude: number, subtotal: number): CalculatedTax {
+    const isNYCBorough = latitude >= 40.4774 && latitude <= 40.9176 && longitude >= -74.2591 && longitude <= -73.7004;
 
-    const isNYC = lat >= 40.47 && lat <= 40.92 && lon >= -74.26 && lon <= -73.70;
+    let breakdown = { 
+      state_rate: 0.0400, 
+      county_rate: 0.0400, 
+      city_rate: 0.0000, 
+      special_rates: 0.0000 
+    };
+    let jurisdictions = ['New York State', 'Rest of State'];
 
-    if (isNYC) {
-      cityRate = 0.045;
-      specialRates = 0.00375; 
-      countyRate = 0.0;
-      jurisdictions.push("New York City", "MCTD");
-    } else {
-      jurisdictions.push("Upstate NY County");
+    if (isNYCBorough) {
+      breakdown = { 
+        state_rate: 0.0400, 
+        county_rate: 0.0000, 
+        city_rate: 0.0450, 
+        special_rates: 0.00375 
+      };
+      jurisdictions = ['New York State', 'New York City', 'MCTD'];
     }
 
-    const compositeRate = stateRate + countyRate + cityRate + specialRates;
+    const compositeRate = breakdown.state_rate + breakdown.county_rate + breakdown.city_rate + breakdown.special_rates;
     
-    const subtotalInCents = Math.round(subtotal * 100);
-    const taxAmountInCents = Math.round(subtotalInCents * compositeRate);
+    const taxAmount = Number((subtotal * compositeRate).toFixed(4));
+    
+    const totalAmount = subtotal;
 
     return {
-      composite_tax_rate: Number(compositeRate.toFixed(5)),
-      tax_amount: taxAmountInCents / 100,
-      total_amount: (subtotalInCents + taxAmountInCents) / 100,
-      breakdown: {
-        state_rate: stateRate,
-        county_rate: countyRate,
-        city_rate: cityRate,
-        special_rates: specialRates
-      },
+      composite_tax_rate: compositeRate,
+      tax_amount: taxAmount,
+      total_amount: totalAmount,
+      breakdown,
       jurisdictions
     };
   }

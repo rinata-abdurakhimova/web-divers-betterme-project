@@ -41,8 +41,9 @@ docker compose up --build
 This will automatically build the backend and frontend images, start both services, and set up the internal network.
 
 ### **3. Access the Application**
-* **Frontend (Admin Panel):** [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)
-* **Backend API:** [http://localhost:5000](https://www.google.com/search?q=http://localhost:5000)
+* **Customer Interface:** http://localhost:3000
+* **Admin Dashboard:** http://localhost:3000/admin
+* **Backend API:** [http://localhost:5000]
 
 ### **4. Stop Containers**
 To stop the services, run:

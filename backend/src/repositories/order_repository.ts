@@ -41,7 +41,37 @@ export class OrderRepository {
 
     const res = await pool.query(query, values);
     return res.rows[0];
-  }
+  } // <--- ОСЬ ЦЮ ДУЖКУ ТРЕБА БУЛО ДОДАТИ ТУТ
+
+  static async bulkInsertOrders(orders: OrderData[]) {
+    if (orders.length === 0) return;
+
+    const lats = orders.map(o => o.latitude);
+    const lons = orders.map(o => o.longitude);
+    const subtotals = orders.map(o => o.subtotal);
+    const rates = orders.map(o => o.composite_tax_rate);
+    const taxAmounts = orders.map(o => o.tax_amount);
+    const totalAmounts = orders.map(o => o.total_amount);
+    const breakdowns = orders.map(o => JSON.stringify(o.breakdown));
+    const jurisdictions = orders.map(o => JSON.stringify(o.jurisdictions));
+    const timestamps = orders.map(o => o.timestamp || new Date());
+
+    const query = `
+      INSERT INTO orders (
+        latitude, longitude, subtotal, composite_tax_rate, 
+        tax_amount, total_amount, breakdown, jurisdictions, timestamp
+      )
+      SELECT * FROM UNNEST(
+        $1::numeric[], $2::numeric[], $3::numeric[], $4::numeric[], 
+        $5::numeric[], $6::numeric[], $7::jsonb[], $8::jsonb[], $9::timestamp[]
+      )
+      RETURNING id;
+    `;
+
+    const values = [lats, lons, subtotals, rates, taxAmounts, totalAmounts, breakdowns, jurisdictions, timestamps];
+    const res = await pool.query(query, values);
+    return res.rows;
+  } // <--- А ЦЮ ДУЖКУ ПРИБРАТИ ЗНИЗУ (бо вона закривала insertOrder)
 
   static async searchOrders(filters: any) {
     const page = filters.page ? parseInt(filters.page, 10) : 1;

@@ -23,4 +23,43 @@ export class OrderService {
   static async getOrders(filters: any) {
     return await OrderRepository.searchOrders(filters);
   }
+
+  static async importCSV(csvText: string) {
+    const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    const startIndex = lines[0].toLowerCase().includes('lat') ? 1 : 0;
+    
+    const ordersToInsert: OrderData[] = [];
+
+    for (let i = startIndex; i < lines.length; i++) {
+      const parts = lines[i].split(',');
+      if (parts.length >= 3) {
+        const latitude = parseFloat(parts[0]);
+        const longitude = parseFloat(parts[1]);
+        const subtotal = parseFloat(parts[2]);
+
+        if (!isNaN(latitude) && !isNaN(longitude) && !isNaN(subtotal)) {
+          const taxData = TaxService.getTaxData(latitude, longitude, subtotal);
+          
+          ordersToInsert.push({
+            latitude,
+            longitude,
+            subtotal,
+            composite_tax_rate: taxData.composite_tax_rate,
+            tax_amount: taxData.tax_amount,
+            total_amount: taxData.total_amount,
+            breakdown: taxData.breakdown,
+            jurisdictions: taxData.jurisdictions,
+            timestamp: new Date()
+          });
+        }
+      }
+    }
+
+    if (ordersToInsert.length > 0) {
+      await OrderRepository.bulkInsertOrders(ordersToInsert);
+    }
+    
+    return { inserted: ordersToInsert.length };
+  }
 }

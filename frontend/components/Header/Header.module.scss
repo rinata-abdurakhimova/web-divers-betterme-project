@@ -1,5 +1,9 @@
 .header {
+  position: sticky;
+  top: 0;
   width: 100%;
+  height: 66px;
   padding: 20px 30px;
+  background-color: var(--bg-primary);
   box-shadow: 0 4px 10px var(--bg-secondary);
 }

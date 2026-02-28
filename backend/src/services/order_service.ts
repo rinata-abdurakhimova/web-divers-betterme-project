@@ -37,44 +37,52 @@ export class OrderService {
   }
 
   static async importCSV(csvText: string) {
-    const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    
-    const startIndex = lines[0].toLowerCase().includes('lat') ? 1 : 0;
-    
+    const lines = csvText.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+    const headers = lines[0].split(/[;,]/).map(h => h.trim().toLowerCase());
+
+    const latIndex = headers.indexOf("latitude");
+    const lonIndex = headers.indexOf("longitude");
+    const subtotalIndex = headers.indexOf("subtotal");
+
+    if (latIndex === -1 || lonIndex === -1 || subtotalIndex === -1) {
+      throw new Error("CSV must contain latitude, longitude and subtotal columns.");
+    }
+
     const ordersToInsert: OrderData[] = [];
 
-    for (let i = startIndex; i < lines.length; i++) {
+    for (let i = 1; i < lines.length; i++) {
       const parts = lines[i].split(/[;,]/);
-      if (parts.length >= 3) {
-        const latitude = parseFloat(parts[0]);
-        const longitude = parseFloat(parts[1]);
-        const subtotal = parseFloat(parts[2]);
 
-        if (!isNaN(latitude) && !isNaN(longitude) && !isNaN(subtotal) && this.isValidUSALocation(latitude, longitude)) {
-          try {
-            const taxData = TaxService.getTaxData(latitude, longitude, subtotal);
-            ordersToInsert.push({
-              latitude,
-              longitude,
-              subtotal,
-              composite_tax_rate: taxData.composite_tax_rate,
-              tax_amount: taxData.tax_amount,
-              total_amount: taxData.total_amount,
-              breakdown: taxData.breakdown,
-              jurisdictions: taxData.jurisdictions,
-              timestamp: new Date()
-            });
-          } catch (e) {
-            console.log("Failed row:", i, latitude, longitude, subtotal);
-          }
-        }
+      const latitude = parseFloat(parts[latIndex]);
+      const longitude = parseFloat(parts[lonIndex]);
+      const subtotal = parseFloat(parts[subtotalIndex]);
+
+      if (!isNaN(latitude) && !isNaN(longitude) && !isNaN(subtotal) &&
+          this.isValidUSALocation(latitude, longitude)) {
+
+        const taxData = TaxService.getTaxData(latitude, longitude, subtotal);
+
+        ordersToInsert.push({
+          latitude,
+          longitude,
+          subtotal,
+          composite_tax_rate: taxData.composite_tax_rate,
+          tax_amount: taxData.tax_amount,
+          total_amount: taxData.total_amount,
+          breakdown: taxData.breakdown,
+          jurisdictions: taxData.jurisdictions,
+          timestamp: new Date()
+        });
       }
     }
 
     if (ordersToInsert.length > 0) {
       await OrderRepository.bulkInsertOrders(ordersToInsert);
     }
-    
+
     return { inserted: ordersToInsert.length };
   }
 }

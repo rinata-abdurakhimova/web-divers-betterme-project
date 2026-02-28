@@ -183,17 +183,7 @@ export default function OrderPage() {
             {orderResult && (
                 <div className={styles.block__result}>
                     <h2>Order Summary</h2>
-
-                    <p>Subtotal: ${orderResult.subtotal.toFixed(2)}</p>
-                    <p>Tax rate: {(orderResult.composite_tax_rate * 100).toFixed(3)}%</p>
-                    <p>Tax amount: ${orderResult.tax_amount.toFixed(2)}</p>
                     <p><strong>Total: ${orderResult.total_amount.toFixed(2)}</strong></p>
-
-                    <h3>Breakdown</h3>
-                    <p>State: {(orderResult.breakdown.state_rate * 100).toFixed(3)}%</p>
-                    <p>County: {(orderResult.breakdown.county_rate * 100).toFixed(3)}%</p>
-                    <p>City: {(orderResult.breakdown.city_rate * 100).toFixed(3)}%</p>
-                    <p>Special: {(orderResult.breakdown.special_rates * 100).toFixed(3)}%</p>
                 </div>
             )}
         </main>

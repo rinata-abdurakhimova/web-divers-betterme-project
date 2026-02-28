@@ -1,5 +1,4 @@
-# web-divers-betterme-project
-## BetterMe: Intelligent Tax Compliance System for Drone Delivery
+## BetterMe: Intelligent Tax Compliance System for Drone Delivery (web-divers-betterme-project)
 BetterMe project for web competition
 
 ## Strategic Overview & Business Context
